@@ -6,7 +6,8 @@ class DashboardManager {
         this.products = [];
         this.maxProducts = 8;
         this.logoFile = null;
-        this.currentView = 'grid'; // 'grid' or 'list'
+        this.currentView = 'grid';
+        this.isRendering = false; // Prevent recursive rendering
     }
 
     initialize() {
@@ -72,6 +73,8 @@ class DashboardManager {
     }
 
     setView(view) {
+        if (this.isRendering) return;
+        
         this.currentView = view;
         const productsList = document.getElementById('productsList');
         
@@ -92,9 +95,6 @@ class DashboardManager {
             if (listBtn) listBtn.classList.add('active');
             if (gridBtn) gridBtn.classList.remove('active');
         }
-        
-        // Re-render products to maintain view
-        this.renderProducts();
         
         // Save preference to localStorage
         localStorage.setItem('kweekshop_view_preference', view);
@@ -118,7 +118,6 @@ class DashboardManager {
             return;
         }
 
-        // Show the showcase page
         this.app.showShowcasePreview(this.currentBusiness, this.products);
     }
 
@@ -163,7 +162,6 @@ class DashboardManager {
         if (whatsappNumber) whatsappNumber.value = this.app.utils.sanitizeInput(business.whatsapp_number || '');
         if (businessCurrency) businessCurrency.value = business.currency || 'USD';
         
-        // Load logo if exists
         if (business.logo_url) {
             const logoPreview = document.getElementById('logoPreview');
             const logoPreviewImage = document.getElementById('logoPreviewImage');
@@ -179,25 +177,20 @@ class DashboardManager {
         if (!file) return;
 
         try {
-            // Validate logo file (100KB max)
             this.app.utils.validateLogoFile(file, 100 * 1024);
             
             const logoPreview = document.getElementById('logoPreview');
             const logoPreviewImage = document.getElementById('logoPreviewImage');
             
             if (logoPreview && logoPreviewImage) {
-                // Create preview
                 await this.app.utils.createLogoPreview(file, logoPreview, logoPreviewImage);
-                
-                // Store file for upload
                 this.logoFile = file;
-                
                 this.app.showNotification('Logo preview created. Save business info to upload.', 'success');
             }
             
         } catch (error) {
             this.app.showNotification(error.message, 'error');
-            e.target.value = ''; // Clear the file input
+            e.target.value = '';
         }
     }
 
@@ -211,9 +204,8 @@ class DashboardManager {
         if (logoInput) logoInput.value = '';
         this.logoFile = null;
         
-        // If there's a current business with logo, mark it for removal
         if (this.currentBusiness && this.currentBusiness.logo_url) {
-            this.logoFile = 'remove'; // Special value to indicate removal
+            this.logoFile = 'remove';
         }
         
         this.app.showNotification('Logo removed', 'info');
@@ -236,7 +228,6 @@ class DashboardManager {
 
         if (error) throw error;
 
-        // Get public URL
         const { data: { publicUrl } } = this.app.utils.supabase.storage
             .from('business-assets')
             .getPublicUrl(fileName);
@@ -248,7 +239,6 @@ class DashboardManager {
         if (!logoUrl) return;
         
         try {
-            // Extract file path from URL
             const filePath = logoUrl.split('/').pop();
             const fullPath = `logos/${this.app.authManager.currentUser.id}/${filePath}`;
             
@@ -277,7 +267,6 @@ class DashboardManager {
         const whatsappNumber = document.getElementById('whatsappNumber')?.value;
         const businessCurrency = document.getElementById('businessCurrency')?.value;
 
-        // Validation
         if (!businessName?.trim() || !businessDescription?.trim() || !whatsappNumber?.trim()) {
             this.app.showNotification('Please fill in all business information fields.', 'error');
             return;
@@ -304,16 +293,13 @@ class DashboardManager {
         try {
             let logoUrl = this.currentBusiness?.logo_url;
             
-            // Handle logo upload/removal
             if (this.logoFile) {
                 if (this.logoFile === 'remove') {
-                    // Remove existing logo
                     if (this.currentBusiness?.logo_url) {
                         await this.deleteLogo(this.currentBusiness.logo_url);
                     }
                     logoUrl = null;
                 } else {
-                    // Upload new logo
                     if (this.currentBusiness?.logo_url) {
                         await this.deleteLogo(this.currentBusiness.logo_url);
                     }
@@ -345,10 +331,7 @@ class DashboardManager {
 
             if (result.error) throw result.error;
 
-            // Reset logo file state
             this.logoFile = null;
-            
-            // Reload business info to get the updated data
             await this.loadBusinessInfo();
             this.app.showNotification('Business information saved successfully!', 'success');
             this.updateShareLink();
@@ -365,98 +348,87 @@ class DashboardManager {
     }
 
     async addProduct(e) {
-    e.preventDefault();
-    
-    if (this.products.length >= this.maxProducts) {
-        this.app.showNotification(`Maximum ${this.maxProducts} products allowed. Please delete some products to add new ones.`, 'error');
-        return;
-    }
-
-    const productName = document.getElementById('productName')?.value;
-    const productPrice = document.getElementById('productPrice')?.value;
-    const productImage = document.getElementById('productImage')?.files[0];
-
-    // Validation
-    if (!productName?.trim() || !productPrice?.trim() || !productImage) {
-        this.app.showNotification('Please fill in all product fields.', 'error');
-        return;
-    }
-
-    try {
-        this.app.utils.validateFile(productImage, 1 * 1024 * 1024);
-    } catch (error) {
-        this.app.showNotification(error.message, 'error');
-        return;
-    }
-
-    const submitBtn = document.getElementById('addProductBtn');
-    if (submitBtn) {
-        submitBtn.disabled = true;
-        submitBtn.textContent = 'Adding...';
-    }
-
-    try {
-        // Upload image first
-        const imageUrl = await this.uploadProductImage(productImage);
+        e.preventDefault();
         
-        if (!imageUrl) {
-            throw new Error('Failed to upload image');
-        }
-        
-        const productData = {
-            user_id: this.app.authManager.currentUser.id,
-            name: this.app.utils.sanitizeInput(productName),
-            price: this.app.utils.sanitizeInput(productPrice),
-            image_url: imageUrl,
-            created_at: new Date().toISOString()
-        };
-
-        const { data, error } = await this.app.utils.supabase
-            .from('products')
-            .insert([productData])
-            .select();
-
-        if (error) {
-            console.error('Supabase insert error:', error);
-            this.app.showNotification('Database error: ' + error.message, 'error');
+        if (this.products.length >= this.maxProducts) {
+            this.app.showNotification(`Maximum ${this.maxProducts} products allowed. Please delete some products to add new ones.`, 'error');
             return;
         }
 
-        if (data && data.length > 0) {
-            this.products.unshift(data[0]); // Add to beginning of array
-            this.renderProducts();
-            this.updateProductCounter();
-            
-            // Reset form
-            const productForm = document.getElementById('productForm');
-            if (productForm) productForm.reset();
-            
-            // Clear file input specifically
-            const fileInput = document.getElementById('productImage');
-            if (fileInput) fileInput.value = '';
-            
-            this.app.showNotification('Product added successfully!', 'success');
-        } else {
-            this.app.showNotification('Failed to add product. No data returned.', 'error');
+        const productName = document.getElementById('productName')?.value;
+        const productPrice = document.getElementById('productPrice')?.value;
+        const productImage = document.getElementById('productImage')?.files[0];
+
+        if (!productName?.trim() || !productPrice?.trim() || !productImage) {
+            this.app.showNotification('Please fill in all product fields.', 'error');
+            return;
         }
 
-    } catch (error) {
-        console.error('Error adding product:', error);
-        this.app.showNotification(error.message || 'Failed to add product. Please try again.', 'error');
-    } finally {
+        try {
+            this.app.utils.validateFile(productImage, 1 * 1024 * 1024);
+        } catch (error) {
+            this.app.showNotification(error.message, 'error');
+            return;
+        }
+
+        const submitBtn = document.getElementById('addProductBtn');
         if (submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'Add Product';
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Adding...';
+        }
+
+        try {
+            const imageUrl = await this.uploadProductImage(productImage);
+            
+            const productData = {
+                user_id: this.app.authManager.currentUser.id,
+                name: this.app.utils.sanitizeInput(productName),
+                price: this.app.utils.sanitizeInput(productPrice),
+                image_url: imageUrl,
+                created_at: new Date().toISOString()
+            };
+
+            const { data, error } = await this.app.utils.supabase
+                .from('products')
+                .insert([productData])
+                .select();
+
+            if (error) {
+                console.error('Supabase insert error:', error);
+                this.app.showNotification('Database error: ' + error.message, 'error');
+                return;
+            }
+
+            if (data && data.length > 0) {
+                this.products.unshift(data[0]);
+                this.renderProducts();
+                this.updateProductCounter();
+                
+                const productForm = document.getElementById('productForm');
+                if (productForm) productForm.reset();
+                
+                const fileInput = document.getElementById('productImage');
+                if (fileInput) fileInput.value = '';
+                
+                this.app.showNotification('Product added successfully!', 'success');
+            } else {
+                this.app.showNotification('Failed to add product. No data returned.', 'error');
+            }
+
+        } catch (error) {
+            console.error('Error adding product:', error);
+            this.app.showNotification(error.message || 'Failed to add product. Please try again.', 'error');
+        } finally {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Add Product';
+            }
         }
     }
-}
 
     async uploadProductImage(file) {
-    try {
         const fileExt = file.name.split('.').pop();
         const fileName = `${this.app.authManager.currentUser.id}/${Date.now()}.${fileExt}`;
-        
-        console.log('Uploading image:', fileName);
         
         const { data, error } = await this.app.utils.supabase.storage
             .from('product-images')
@@ -465,24 +437,14 @@ class DashboardManager {
                 upsert: false
             });
 
-        if (error) {
-            console.error('Upload error:', error);
-            throw error;
-        }
+        if (error) throw error;
 
-        // Get public URL
         const { data: { publicUrl } } = this.app.utils.supabase.storage
             .from('product-images')
             .getPublicUrl(fileName);
 
-        console.log('Image uploaded, URL:', publicUrl);
         return publicUrl;
-        
-    } catch (error) {
-        console.error('Error in uploadProductImage:', error);
-        throw new Error('Failed to upload image: ' + error.message);
     }
-}
 
     async loadProducts() {
         const { data, error } = await this.app.utils.supabase
@@ -504,7 +466,7 @@ class DashboardManager {
         
         const currency = this.currentBusiness?.currency || 'USD';
         
-        // Set initial view class
+        // Set view class without triggering re-render
         productsList.className = `products-list ${this.currentView}-view`;
         
         if (this.products.length === 0) {
@@ -533,8 +495,17 @@ class DashboardManager {
             </div>
         `).join('');
         
-        // Apply the current view after rendering
-        this.setView(this.currentView);
+        // Update button states based on current view
+        const gridBtn = document.getElementById('gridViewBtn');
+        const listBtn = document.getElementById('listViewBtn');
+        
+        if (this.currentView === 'grid') {
+            if (gridBtn) gridBtn.classList.add('active');
+            if (listBtn) listBtn.classList.remove('active');
+        } else {
+            if (listBtn) listBtn.classList.add('active');
+            if (gridBtn) gridBtn.classList.remove('active');
+        }
     }
 
     updateProductCounter() {
