@@ -6,28 +6,98 @@ class DashboardManager {
         this.products = [];
         this.maxProducts = 8;
         this.logoFile = null;
+        this.currentView = 'grid'; // 'grid' or 'list'
     }
 
     initialize() {
         this.initializeEventListeners();
+        this.loadSavedViewPreference();
     }
 
     initializeEventListeners() {
         // Business form
-        document.getElementById('businessForm').addEventListener('submit', (e) => this.saveBusinessInfo(e));
+        const businessForm = document.getElementById('businessForm');
+        if (businessForm) {
+            businessForm.addEventListener('submit', (e) => this.saveBusinessInfo(e));
+        }
         
         // Product form
-        document.getElementById('productForm').addEventListener('submit', (e) => this.addProduct(e));
+        const productForm = document.getElementById('productForm');
+        if (productForm) {
+            productForm.addEventListener('submit', (e) => this.addProduct(e));
+        }
         
         // Share link
-        document.getElementById('copyLinkBtn').addEventListener('click', () => this.copyShareLink());
+        const copyLinkBtn = document.getElementById('copyLinkBtn');
+        if (copyLinkBtn) {
+            copyLinkBtn.addEventListener('click', () => this.copyShareLink());
+        }
         
         // Logo upload
-        document.getElementById('businessLogo').addEventListener('change', (e) => this.handleLogoUpload(e));
-        document.getElementById('removeLogoBtn').addEventListener('click', () => this.removeLogo());
+        const businessLogo = document.getElementById('businessLogo');
+        if (businessLogo) {
+            businessLogo.addEventListener('change', (e) => this.handleLogoUpload(e));
+        }
+        
+        const removeLogoBtn = document.getElementById('removeLogoBtn');
+        if (removeLogoBtn) {
+            removeLogoBtn.addEventListener('click', () => this.removeLogo());
+        }
         
         // Preview button
         this.setupPreviewButton();
+        
+        // View toggle
+        this.initializeViewToggle();
+    }
+
+    loadSavedViewPreference() {
+        const savedView = localStorage.getItem('kweekshop_view_preference');
+        if (savedView && (savedView === 'grid' || savedView === 'list')) {
+            this.currentView = savedView;
+        }
+    }
+
+    initializeViewToggle() {
+        const gridBtn = document.getElementById('gridViewBtn');
+        const listBtn = document.getElementById('listViewBtn');
+        
+        if (gridBtn) {
+            gridBtn.onclick = () => this.setView('grid');
+        }
+        
+        if (listBtn) {
+            listBtn.onclick = () => this.setView('list');
+        }
+    }
+
+    setView(view) {
+        this.currentView = view;
+        const productsList = document.getElementById('productsList');
+        
+        if (!productsList) return;
+        
+        // Update button states
+        const gridBtn = document.getElementById('gridViewBtn');
+        const listBtn = document.getElementById('listViewBtn');
+        
+        if (view === 'grid') {
+            productsList.classList.remove('list-view');
+            productsList.classList.add('grid-view');
+            if (gridBtn) gridBtn.classList.add('active');
+            if (listBtn) listBtn.classList.remove('active');
+        } else {
+            productsList.classList.remove('grid-view');
+            productsList.classList.add('list-view');
+            if (listBtn) listBtn.classList.add('active');
+            if (gridBtn) gridBtn.classList.remove('active');
+        }
+        
+        // Re-render products to maintain view
+        this.renderProducts();
+        
+        // Save preference to localStorage
+        localStorage.setItem('kweekshop_view_preference', view);
     }
 
     setupPreviewButton() {
@@ -83,17 +153,24 @@ class DashboardManager {
     }
 
     populateBusinessForm(business) {
-        document.getElementById('businessName').value = this.app.utils.sanitizeInput(business.name || '');
-        document.getElementById('businessDescription').value = this.app.utils.sanitizeInput(business.description || '');
-        document.getElementById('whatsappNumber').value = this.app.utils.sanitizeInput(business.whatsapp_number || '');
-        document.getElementById('businessCurrency').value = business.currency || 'USD';
+        const businessName = document.getElementById('businessName');
+        const businessDescription = document.getElementById('businessDescription');
+        const whatsappNumber = document.getElementById('whatsappNumber');
+        const businessCurrency = document.getElementById('businessCurrency');
+        
+        if (businessName) businessName.value = this.app.utils.sanitizeInput(business.name || '');
+        if (businessDescription) businessDescription.value = this.app.utils.sanitizeInput(business.description || '');
+        if (whatsappNumber) whatsappNumber.value = this.app.utils.sanitizeInput(business.whatsapp_number || '');
+        if (businessCurrency) businessCurrency.value = business.currency || 'USD';
         
         // Load logo if exists
         if (business.logo_url) {
             const logoPreview = document.getElementById('logoPreview');
             const logoPreviewImage = document.getElementById('logoPreviewImage');
-            logoPreviewImage.src = business.logo_url;
-            logoPreview.style.display = 'block';
+            if (logoPreview && logoPreviewImage) {
+                logoPreviewImage.src = business.logo_url;
+                logoPreview.style.display = 'block';
+            }
         }
     }
 
@@ -108,13 +185,15 @@ class DashboardManager {
             const logoPreview = document.getElementById('logoPreview');
             const logoPreviewImage = document.getElementById('logoPreviewImage');
             
-            // Create preview
-            await this.app.utils.createLogoPreview(file, logoPreview, logoPreviewImage);
-            
-            // Store file for upload
-            this.logoFile = file;
-            
-            this.app.showNotification('Logo preview created. Save business info to upload.', 'success');
+            if (logoPreview && logoPreviewImage) {
+                // Create preview
+                await this.app.utils.createLogoPreview(file, logoPreview, logoPreviewImage);
+                
+                // Store file for upload
+                this.logoFile = file;
+                
+                this.app.showNotification('Logo preview created. Save business info to upload.', 'success');
+            }
             
         } catch (error) {
             this.app.showNotification(error.message, 'error');
@@ -127,9 +206,9 @@ class DashboardManager {
         const logoInput = document.getElementById('businessLogo');
         const logoPreviewImage = document.getElementById('logoPreviewImage');
         
-        logoPreview.style.display = 'none';
-        logoPreviewImage.src = '';
-        logoInput.value = '';
+        if (logoPreview) logoPreview.style.display = 'none';
+        if (logoPreviewImage) logoPreviewImage.src = '';
+        if (logoInput) logoInput.value = '';
         this.logoFile = null;
         
         // If there's a current business with logo, mark it for removal
@@ -193,13 +272,13 @@ class DashboardManager {
     async saveBusinessInfo(e) {
         e.preventDefault();
         
-        const businessName = document.getElementById('businessName').value;
-        const businessDescription = document.getElementById('businessDescription').value;
-        const whatsappNumber = document.getElementById('whatsappNumber').value;
-        const businessCurrency = document.getElementById('businessCurrency').value;
+        const businessName = document.getElementById('businessName')?.value;
+        const businessDescription = document.getElementById('businessDescription')?.value;
+        const whatsappNumber = document.getElementById('whatsappNumber')?.value;
+        const businessCurrency = document.getElementById('businessCurrency')?.value;
 
         // Validation
-        if (!businessName.trim() || !businessDescription.trim() || !whatsappNumber.trim()) {
+        if (!businessName?.trim() || !businessDescription?.trim() || !whatsappNumber?.trim()) {
             this.app.showNotification('Please fill in all business information fields.', 'error');
             return;
         }
@@ -217,8 +296,10 @@ class DashboardManager {
         }
 
         const submitBtn = e.target.querySelector('button[type="submit"]');
-        submitBtn.disabled = true;
-        submitBtn.textContent = 'Saving...';
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Saving...';
+        }
 
         try {
             let logoUrl = this.currentBusiness?.logo_url;
@@ -276,8 +357,10 @@ class DashboardManager {
             console.error('Error saving business info:', error);
             this.app.showNotification('Failed to save business information. Please try again.', 'error');
         } finally {
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'Save Business Info';
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Save Business Info';
+            }
         }
     }
 
@@ -289,12 +372,12 @@ class DashboardManager {
             return;
         }
 
-        const productName = document.getElementById('productName').value;
-        const productPrice = document.getElementById('productPrice').value;
-        const productImage = document.getElementById('productImage').files[0];
+        const productName = document.getElementById('productName')?.value;
+        const productPrice = document.getElementById('productPrice')?.value;
+        const productImage = document.getElementById('productImage')?.files[0];
 
         // Validation
-        if (!productName.trim() || !productPrice.trim() || !productImage) {
+        if (!productName?.trim() || !productPrice?.trim() || !productImage) {
             this.app.showNotification('Please fill in all product fields.', 'error');
             return;
         }
@@ -307,8 +390,10 @@ class DashboardManager {
         }
 
         const submitBtn = document.getElementById('addProductBtn');
-        submitBtn.disabled = true;
-        submitBtn.textContent = 'Adding...';
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Adding...';
+        }
 
         try {
             const imageUrl = await this.uploadProductImage(productImage);
@@ -331,15 +416,20 @@ class DashboardManager {
             this.products.push(data[0]);
             this.renderProducts();
             this.updateProductCounter();
-            document.getElementById('productForm').reset();
+            
+            const productForm = document.getElementById('productForm');
+            if (productForm) productForm.reset();
+            
             this.app.showNotification('Product added successfully!', 'success');
 
         } catch (error) {
             console.error('Error adding product:', error);
             this.app.showNotification('Failed to add product. Please try again.', 'error');
         } finally {
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'Add Product';
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Add Product';
+            }
         }
     }
 
@@ -379,7 +469,12 @@ class DashboardManager {
 
     renderProducts() {
         const productsList = document.getElementById('productsList');
+        if (!productsList) return;
+        
         const currency = this.currentBusiness?.currency || 'USD';
+        
+        // Set initial view class
+        productsList.className = `products-list ${this.currentView}-view`;
         
         if (this.products.length === 0) {
             productsList.innerHTML = `
@@ -395,7 +490,7 @@ class DashboardManager {
             <div class="product-item" data-product-id="${product.id}">
                 <div class="product-item-header">
                     <div>
-                        <h4>${product.name}</h4>
+                        <h4>${this.app.utils.sanitizeInput(product.name)}</h4>
                         <div class="price">${this.app.utils.formatPrice(product.price, currency)}</div>
                     </div>
                     <button type="button" class="delete-btn" onclick="window.kweekShopApp.dashboardManager.deleteProduct('${product.id}')">
@@ -406,10 +501,15 @@ class DashboardManager {
                      onerror="this.src='assets/images/placeholder.jpg'">
             </div>
         `).join('');
+        
+        // Apply the current view after rendering
+        this.setView(this.currentView);
     }
 
     updateProductCounter() {
         const counter = document.getElementById('productCounter');
+        if (!counter) return;
+        
         counter.textContent = `${this.products.length}/${this.maxProducts} products`;
         
         if (this.products.length >= this.maxProducts) {
@@ -446,19 +546,22 @@ class DashboardManager {
     }
 
     updateShareLink() {
+        const shareableLink = document.getElementById('shareableLink');
+        if (!shareableLink) return;
+        
         if (this.app.authManager.currentUser && this.currentBusiness) {
             const shareLink = this.app.utils.generateShareableLink(
                 this.app.authManager.currentUser.id, 
                 this.currentBusiness.name
             );
-            document.getElementById('shareableLink').value = shareLink;
+            shareableLink.value = shareLink;
         } else {
-            document.getElementById('shareableLink').value = 'Please save your business information first';
+            shareableLink.value = 'Please save your business information first';
         }
     }
 
     copyShareLink() {
-        const shareLink = document.getElementById('shareableLink').value;
+        const shareLink = document.getElementById('shareableLink')?.value;
         if (shareLink && shareLink !== 'Please save your business information first') {
             this.app.utils.copyToClipboard(shareLink);
         } else {
