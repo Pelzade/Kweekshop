@@ -966,4 +966,44 @@ small {
 #authSwitchText {
     color: var(--text-secondary);
 }
+/* Preview Product Image */
+.preview-product-image {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 12px 12px 0 0;
+}
+
+.preview-card {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: var(--shadow-xl);
+    transform: rotateY(-10deg) rotateX(5deg);
+    transition: transform 0.3s ease;
+    border: 1px solid var(--border-color);
+    max-width: 300px;
+}
+
+.preview-card:hover {
+    transform: rotateY(-5deg) rotateX(2deg);
+}
+
+.preview-content {
+    padding: 1.5rem;
+}
+
+.preview-content h4 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+}
+
+.preview-content .price {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--success-color);
+    margin-bottom: 1rem;
+}
 /* Rest of your existing CSS remains the same below this point */
