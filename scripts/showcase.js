@@ -146,10 +146,9 @@ class ShowcaseManager {
     }
 
     generateWhatsAppLink(whatsappNumber, product, currency) {
-    const productImageUrl = product.image_url;
-    const message = `Hi, I'm interested in this!\n\nProduct: ${product.name}\nPrice: ${this.app.utils.formatPrice(product.price, currency)}\n\nView product image: ${productImageUrl}`;
-    const encodedMessage = encodeURIComponent(message);
-    const cleanNumber = whatsappNumber.replace(/\D/g, '');
-    return `https://wa.me/${cleanNumber}?text=${encodedMessage}`;
-}
+        const message = `Hi, I'm interested in this!\n\nProduct: ${product.name}\nPrice: ${this.app.utils.formatPrice(product.price, currency)}`;
+        const encodedMessage = encodeURIComponent(message);
+        const cleanNumber = whatsappNumber.replace(/\D/g, '');
+        return `https://wa.me/${cleanNumber}?text=${encodedMessage}`;
+    }
 }
