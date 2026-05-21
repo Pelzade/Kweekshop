@@ -215,12 +215,14 @@ class AuthManager {
                 this.app.showNotification('Successfully logged in!', 'success');
                 this.closeAuthModal();
             } else {
-                this.app.showNotification(
-                    'Account created successfully! You can now login.',
-                    'success'
-                );
-                this.closeAuthModal();
-            }
+    // Check if email confirmation is required
+    if (result.data.user && result.data.user.identities && result.data.user.identities.length === 0) {
+        this.app.showNotification('Email already exists. Please login instead.', 'error');
+    } else {
+        this.app.showNotification('Sign up successful! Please check your email to confirm your account.', 'success');
+    }
+    this.closeAuthModal();
+}
 
         } catch (error) {
             console.error('🔐 Auth error:', error);
