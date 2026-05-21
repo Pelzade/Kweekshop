@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KweekShop - Create Beautiful Product Showcases</title>
+    <meta name="description" content="Create beautiful product showcases that connect directly to WhatsApp. Perfect for small businesses and service providers.">
+    <link rel="stylesheet" href="styles/main.css">
+    <!-- Supabase Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <h1 class="nav-logo">KweekShop</h1>
+            <div class="nav-auth" id="navAuth">
+                <button class="btn-login" id="loginBtn">Login</button>
+                <button class="btn-primary" id="signupBtn">Sign Up</button>
+            </div>
+            <div class="nav-user" id="navUser" style="display: none;">
+                <span id="userEmail"></span>
+                <button class="btn-login" id="logoutBtn">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Auth Modal -->
+    <div id="authModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="authTitle">Login to KweekShop</h2>
+            <form id="authForm" class="auth-form">
+                <div class="form-group">
+                    <label for="email">Email:</label>
+                    <input type="email" id="email" name="email" required placeholder="Enter your email">
+                </div>
+                <div class="form-group">
+                    <label for="password">Password:</label>
+                    <input type="password" id="password" name="password" required minlength="6" placeholder="Enter your password">
+                </div>
+                <button type="submit" class="btn-primary btn-full" id="authSubmit">Login</button>
+            </form>
+            <p id="authSwitch">
+                <span id="authSwitchText">Don't have an account? </span>
+                <a href="#" id="switchToSignup">Sign up</a>
+            </p>
+        </div>
+    </div>
+
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="loading-screen">
+        <div class="loading-spinner"></div>
+        <p>Loading KweekShop...</p>
+    </div>
+
+    <!-- Landing Page -->
+    <div id="landingPage" class="landing-page">
+        <div class="container">
+            <section class="hero-section">
+                <div class="hero-content">
+                    <h1 class="hero-title">Create Beautiful Product Showcases in Minutes</h1>
+                    <p class="hero-subtitle">Connect your products directly to WhatsApp and grow your business with KweekShop</p>
+                    <div class="hero-buttons">
+                        <button class="btn-primary btn-large" id="heroSignupBtn">Get Started Free</button>
+                        <button class="btn-secondary btn-large" id="heroLoginBtn">Login</button>
+                    </div>
+                </div>
+                <div class="hero-image">
+                    <div class="showcase-preview">
+                        <div class="preview-card">
+                            <div class="preview-image"></div>
+                            <div class="preview-content">
+                                <h4>Product Name</h4>
+                                <p class="price">$99.99</p>
+                                <button class="btn-whatsapp">Contact via WhatsApp</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="features-section">
+                <h2>Why Choose KweekShop?</h2>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">🚀</div>
+                        <h3>Easy Setup</h3>
+                        <p>Create your showcase in minutes with our simple, intuitive interface.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">💬</div>
+                        <h3>WhatsApp Integration</h3>
+                        <p>Direct customer inquiries straight to your WhatsApp with pre-filled messages.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🌍</div>
+                        <h3>Multi-Currency</h3>
+                        <p>Support for USD, Naira, Cedis, and CFA Francs with proper symbols.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">📱</div>
+                        <h3>Mobile Friendly</h3>
+                        <p>Your showcase looks great on all devices - desktop, tablet, and mobile.</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- Dashboard -->
+    <main id="dashboard" class="dashboard" style="display: none;">
+        <div class="container">
+            <div class="dashboard-header">
+                <h2>Your KweekShop Dashboard</h2>
+                <p class="dashboard-subtitle">Create your beautiful product showcase in minutes</p>
+            </div>
+            
+            <!-- Business Info Form -->
+            <section class="business-form-section">
+                <h3>Business Information</h3>
+                <form id="businessForm" class="business-form">
+                    <div class="form-group">
+                        <label for="businessLogo">Business Logo</label>
+                        <input type="file" id="businessLogo" name="businessLogo" accept="image/*">
+                        <small>Recommended: Square logo, Max 100KB (JPG, PNG, WebP)</small>
+                        <div id="logoPreview" class="logo-preview" style="display: none;">
+                            <img id="logoPreviewImage" src="" alt="Logo preview">
+                            <button type="button" id="removeLogoBtn" class="remove-logo-btn">Remove Logo</button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="businessName">Business Name *</label>
+                        <input type="text" id="businessName" name="businessName" required maxlength="100" placeholder="Enter your business name">
+                    </div>
+                    <div class="form-group">
+                        <label for="businessDescription">Short Description *</label>
+                        <textarea id="businessDescription" name="businessDescription" required maxlength="200" placeholder="Describe your business in a few words"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="whatsappNumber">WhatsApp Number *</label>
+                        <input type="tel" id="whatsappNumber" name="whatsappNumber" required 
+                               pattern="[+]?[0-9\s\-\(\)]+" placeholder="+1234567890">
+                    </div>
+                    <div class="form-group">
+                        <label for="businessCurrency">Currency *</label>
+                        <select id="businessCurrency" name="businessCurrency" required>
+                            <option value="USD">US Dollar ($)</option>
+                            <option value="NGN">Nigerian Naira (₦)</option>
+                            <option value="GHS">Ghanaian Cedi (₵)</option>
+                            <option value="XOF">CFA Franc (CFA)</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn-primary btn-full">Save Business Info</button>
+                </form>
+            </section>
+
+            <!-- Products Section -->
+            <section class="products-section">
+                <div class="section-header">
+                    <h3>Products/Services</h3>
+                    <span class="product-counter" id="productCounter">0/8 products</span>
+                </div>
+                <form id="productForm" class="product-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="productName">Product Name *</label>
+                            <input type="text" id="productName" name="productName" required maxlength="100" placeholder="Enter product name">
+                        </div>
+                        <div class="form-group">
+                            <label for="productPrice">Price *</label>
+                            <input type="text" id="productPrice" name="productPrice" required maxlength="20" placeholder="Enter price">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="productImage">Product Image *</label>
+                        <input type="file" id="productImage" name="productImage" accept="image/*" required>
+                        <small>Supported formats: JPG, PNG, WebP (Max 1MB)</small>
+                    </div>
+                    <button type="submit" class="btn-primary btn-full" id="addProductBtn">Add Product</button>
+                </form>
+
+                <div id="productsList" class="products-list">
+                    <!-- Products will be dynamically added here -->
+                </div>
+            </section>
+
+            <!-- Share Section -->
+            <section class="share-section">
+                <h3>Your Shareable Link</h3>
+                <p class="share-description">Share this link with your customers to showcase your products</p>
+                <div class="share-link">
+                    <input type="text" id="shareableLink" readonly placeholder="Save your business info to generate link">
+                    <button class="btn-secondary" id="copyLinkBtn">Copy Link</button>
+                </div>
+                
+                <!-- Preview Button -->
+                <div class="preview-section">
+                    <button class="btn-primary btn-full" id="previewShopBtn">
+                        👁️ Preview Your Shop
+                    </button>
+                    <p class="preview-note">See how your customers will view your shop</p>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Public Showcase Page - For Buyers Only -->
+    <div id="showcasePage" class="showcase-page" style="display: none;">
+        <div class="container">
+            <header class="showcase-header" id="showcaseHeader">
+                <h1 id="showcaseBusinessName">Business Name</h1>
+                <p id="showcaseDescription">Business description will appear here</p>
+            </header>
+            
+            <div id="showcaseProducts" class="products-grid">
+                <!-- Products will be dynamically loaded here -->
+            </div>
+            
+            <div class="showcase-footer">
+                <p>
+                    <a href="/" class="create-shop-link">Create your own shop →</a>
+                </p>
+                <p class="powered-by">Powered by KweekShop</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="scripts/utils.js"></script>
+    <script src="scripts/auth.js"></script>
+    <script src="scripts/dashboard.js"></script>
+    <script src="scripts/showcase.js"></script>
+    <script src="scripts/app.js"></script>
+</body>
+</html>
