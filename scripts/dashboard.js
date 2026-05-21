@@ -396,7 +396,12 @@ class DashboardManager {
     }
 
     try {
+        // Upload image first
         const imageUrl = await this.uploadProductImage(productImage);
+        
+        if (!imageUrl) {
+            throw new Error('Failed to upload image');
+        }
         
         const productData = {
             user_id: this.app.authManager.currentUser.id,
@@ -412,27 +417,32 @@ class DashboardManager {
             .select();
 
         if (error) {
-            console.error('Supabase error:', error);
-            this.app.showNotification('Failed to add product. Please try again.', 'error');
+            console.error('Supabase insert error:', error);
+            this.app.showNotification('Database error: ' + error.message, 'error');
             return;
         }
 
         if (data && data.length > 0) {
-            this.products.push(data[0]);
+            this.products.unshift(data[0]); // Add to beginning of array
             this.renderProducts();
             this.updateProductCounter();
             
+            // Reset form
             const productForm = document.getElementById('productForm');
             if (productForm) productForm.reset();
             
+            // Clear file input specifically
+            const fileInput = document.getElementById('productImage');
+            if (fileInput) fileInput.value = '';
+            
             this.app.showNotification('Product added successfully!', 'success');
         } else {
-            this.app.showNotification('Failed to add product. Please try again.', 'error');
+            this.app.showNotification('Failed to add product. No data returned.', 'error');
         }
 
     } catch (error) {
         console.error('Error adding product:', error);
-        this.app.showNotification('Failed to add product. Please try again.', 'error');
+        this.app.showNotification(error.message || 'Failed to add product. Please try again.', 'error');
     } finally {
         if (submitBtn) {
             submitBtn.disabled = false;
@@ -442,8 +452,11 @@ class DashboardManager {
 }
 
     async uploadProductImage(file) {
+    try {
         const fileExt = file.name.split('.').pop();
         const fileName = `${this.app.authManager.currentUser.id}/${Date.now()}.${fileExt}`;
+        
+        console.log('Uploading image:', fileName);
         
         const { data, error } = await this.app.utils.supabase.storage
             .from('product-images')
@@ -452,14 +465,24 @@ class DashboardManager {
                 upsert: false
             });
 
-        if (error) throw error;
+        if (error) {
+            console.error('Upload error:', error);
+            throw error;
+        }
 
+        // Get public URL
         const { data: { publicUrl } } = this.app.utils.supabase.storage
             .from('product-images')
             .getPublicUrl(fileName);
 
+        console.log('Image uploaded, URL:', publicUrl);
         return publicUrl;
+        
+    } catch (error) {
+        console.error('Error in uploadProductImage:', error);
+        throw new Error('Failed to upload image: ' + error.message);
     }
+}
 
     async loadProducts() {
         const { data, error } = await this.app.utils.supabase
