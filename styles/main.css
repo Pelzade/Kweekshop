@@ -1022,4 +1022,110 @@ small {
     padding: 0.5rem 1rem;
     font-size: 0.75rem;
 }
+/* Products View Toggle Styles */
+.products-view-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.view-toggle {
+    display: flex;
+    gap: 0.5rem;
+    background: var(--background-color);
+    padding: 0.25rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.view-btn {
+    padding: 0.5rem 1rem;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    color: var(--text-secondary);
+}
+
+.view-btn.active {
+    background: var(--primary-color);
+    color: white;
+}
+
+.view-btn:hover:not(.active) {
+    background: var(--border-color);
+}
+
+/* Grid View (Default) */
+.products-list.grid-view {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.products-list.grid-view .product-item {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 0;
+}
+
+.products-list.grid-view .product-item img {
+    max-width: 100%;
+    height: 200px;
+    object-fit: cover;
+}
+
+/* List View */
+.products-list.list-view {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.products-list.list-view .product-item {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1rem;
+}
+
+.products-list.list-view .product-item img {
+    max-width: 100px;
+    height: 100px;
+    object-fit: cover;
+    margin-top: 0;
+}
+
+.products-list.list-view .product-item-header {
+    flex: 1;
+    margin-bottom: 0;
+    align-items: center;
+}
+
+@media (max-width: 768px) {
+    .products-list.list-view .product-item {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .products-list.list-view .product-item-header {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .view-toggle {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .products-view-header {
+        flex-direction: column;
+    }
+}
 /* Rest of your existing CSS remains the same below this point */
