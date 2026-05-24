@@ -6,10 +6,13 @@ class DashboardManager {
         this.products = [];
         this.maxProducts = 8;
         this.logoFile = null;
+        this.currentView = 'grid';
     }
 
     initialize() {
         this.initializeEventListeners();
+        this.loadSavedViewPreference();
+        this.applyViewStyle(); // Apply saved view on load
     }
 
     initializeEventListeners() {
@@ -44,6 +47,60 @@ class DashboardManager {
         
         // Preview button
         this.setupPreviewButton();
+        
+        // View toggle buttons
+        this.setupViewToggle();
+    }
+
+    loadSavedViewPreference() {
+        const savedView = localStorage.getItem('kweekshop_view_preference');
+        if (savedView === 'grid' || savedView === 'list') {
+            this.currentView = savedView;
+        }
+    }
+
+    setupViewToggle() {
+        const gridBtn = document.getElementById('gridViewBtn');
+        const listBtn = document.getElementById('listViewBtn');
+        
+        if (gridBtn) {
+            gridBtn.addEventListener('click', () => {
+                if (this.currentView === 'grid') return;
+                this.currentView = 'grid';
+                this.applyViewStyle();
+                localStorage.setItem('kweekshop_view_preference', 'grid');
+            });
+        }
+        
+        if (listBtn) {
+            listBtn.addEventListener('click', () => {
+                if (this.currentView === 'list') return;
+                this.currentView = 'list';
+                this.applyViewStyle();
+                localStorage.setItem('kweekshop_view_preference', 'list');
+            });
+        }
+    }
+
+    applyViewStyle() {
+        const productsList = document.getElementById('productsList');
+        if (!productsList) return;
+        
+        // Update button active states
+        const gridBtn = document.getElementById('gridViewBtn');
+        const listBtn = document.getElementById('listViewBtn');
+        
+        if (this.currentView === 'grid') {
+            productsList.classList.remove('list-view');
+            productsList.classList.add('grid-view');
+            if (gridBtn) gridBtn.classList.add('active');
+            if (listBtn) listBtn.classList.remove('active');
+        } else {
+            productsList.classList.remove('grid-view');
+            productsList.classList.add('list-view');
+            if (listBtn) listBtn.classList.add('active');
+            if (gridBtn) gridBtn.classList.remove('active');
+        }
     }
 
     setupPreviewButton() {
@@ -349,6 +406,7 @@ class DashboardManager {
                 this.products.unshift(data[0]);
                 this.renderProducts();
                 this.updateProductCounter();
+                this.applyViewStyle(); // Re-apply view style after rendering
                 
                 const productForm = document.getElementById('productForm');
                 if (productForm) productForm.reset();
@@ -404,6 +462,7 @@ class DashboardManager {
         this.products = data || [];
         this.renderProducts();
         this.updateProductCounter();
+        this.applyViewStyle(); // Apply saved view after loading products
     }
 
     renderProducts() {
@@ -470,6 +529,7 @@ class DashboardManager {
             this.products = this.products.filter(p => p.id !== productId);
             this.renderProducts();
             this.updateProductCounter();
+            this.applyViewStyle(); // Re-apply view style after deletion
             this.app.showNotification('Product deleted successfully.', 'success');
 
         } catch (error) {
