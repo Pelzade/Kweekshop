@@ -6,6 +6,7 @@ class KweekShopApp {
         this.dashboardManager = null;
         this.showcaseManager = null;
         this.showcasePreviewActive = false;
+        this.inactivityTimer = null;
         this.initializeApp();
     }
 
@@ -28,6 +29,9 @@ class KweekShopApp {
             // Set up auth state listener
             this.setupAuthListener();
             
+            // Set up auto-logout after user is authenticated
+            this.setupAutoLogout();
+            
             // Handle routing based on URL parameters
             this.handleRouting();
             
@@ -48,13 +52,76 @@ class KweekShopApp {
                 this.authManager.updateUI();
                 this.showDashboard();
                 this.showNotification('Welcome to KweekShop!', 'success');
+                // Reset inactivity timer when user logs in
+                this.resetInactivityTimer();
             } else if (event === 'SIGNED_OUT') {
                 this.authManager.currentUser = null;
                 this.authManager.updateUI();
                 this.showLandingPage();
-                this.showNotification('Successfully logged out.', 'success');
+                // Clear inactivity timer when user logs out
+                this.clearInactivityTimer();
             }
         });
+    }
+
+    setupAutoLogout() {
+        // Set up event listeners for user activity
+        const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+        
+        const resetTimer = () => {
+            this.resetInactivityTimer();
+        };
+        
+        // Add event listeners for user activity
+        events.forEach(event => {
+            document.addEventListener(event, resetTimer);
+        });
+        
+        // Also listen for dashboard-specific activity
+        const dashboard = document.getElementById('dashboard');
+        if (dashboard) {
+            dashboard.addEventListener('input', resetTimer);
+            dashboard.addEventListener('click', resetTimer);
+        }
+        
+        console.log('✅ Auto-logout timer initialized - 6 hours inactivity timeout');
+    }
+
+    resetInactivityTimer() {
+        // Clear existing timer
+        if (this.inactivityTimer) {
+            clearTimeout(this.inactivityTimer);
+        }
+        
+        // Only set timer if user is logged in
+        if (this.authManager && this.authManager.currentUser) {
+            // 6 hours = 6 * 60 * 60 * 1000 milliseconds
+            this.inactivityTimer = setTimeout(() => {
+                this.autoLogout();
+            }, 6 * 60 * 60 * 1000); // 6 hours
+            
+            console.log('🕐 Inactivity timer reset. Will logout after 6 hours of inactivity.');
+        }
+    }
+
+    clearInactivityTimer() {
+        if (this.inactivityTimer) {
+            clearTimeout(this.inactivityTimer);
+            this.inactivityTimer = null;
+            console.log('🕐 Inactivity timer cleared');
+        }
+    }
+
+    async autoLogout() {
+        console.log('🕐 Auto-logout triggered due to 6 hours of inactivity');
+        
+        // Sign out the user (no notification)
+        if (this.authManager) {
+            await this.authManager.signOut();
+        }
+        
+        // Clear the timer
+        this.clearInactivityTimer();
     }
 
     handleRouting() {
@@ -79,6 +146,8 @@ class KweekShopApp {
                 this.authManager.currentUser = session.user;
                 this.authManager.updateUI();
                 this.showDashboard();
+                // Reset timer when user is already logged in
+                this.resetInactivityTimer();
             } else {
                 this.showLandingPage();
             }
@@ -108,6 +177,8 @@ class KweekShopApp {
             if (this.dashboardManager) {
                 this.dashboardManager.loadUserData();
             }
+            // Reset inactivity timer
+            this.resetInactivityTimer();
         }
         console.log('✅ Showing dashboard');
     }
