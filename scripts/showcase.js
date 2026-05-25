@@ -114,20 +114,24 @@ class ShowcaseManager {
             return;
         }
 
-        productsGrid.innerHTML = products.map(product => `
-            <div class="product-card">
-                <img src="${product.image_url}" alt="${this.app.utils.sanitizeInput(product.name)}" 
-                     onerror="this.src='assets/images/placeholder.jpg'">
-                <div class="product-card-content">
-                    <h3>${product.name}</h3>
-                    <div class="price">${this.app.utils.formatPrice(product.price, currency)}</div>
-                    <a href="${this.generateWhatsAppLink(business.whatsapp_number, product, currency)}" 
-                       class="btn-whatsapp" target="_blank" rel="noopener noreferrer">
-                        Contact via WhatsApp
-                    </a>
-                </div>
+    productsGrid.innerHTML = products.map(product => `
+        <div class="product-card">
+            <img src="${product.image_url}" alt="${this.app.utils.sanitizeInput(product.name)}" 
+                 onerror="this.src='assets/images/placeholder.jpg'">
+            <div class="product-card-content">
+                <h3>${product.name}</h3>
+                <div class="price">${this.app.utils.formatPrice(product.price, currency)}</div>
+                ${product.description ? `<p class="product-description">${this.app.utils.sanitizeInput(product.description)}</p>` : ''}
+                <a href="${this.generateWhatsAppLink(business.whatsapp_number, product, currency)}" 
+                   class="btn-whatsapp" target="_blank" rel="noopener noreferrer">
+                    Contact via WhatsApp
+                </a>
             </div>
-        `).join('');
+        </div>
+    `).join('');
+    
+    // ... rest of existing code ...
+}
         
         // Update the app's preview state
         this.app.showcasePreviewActive = isPreview;
