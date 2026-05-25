@@ -469,37 +469,40 @@ class DashboardManager {
     }
 
     renderProducts() {
-        const productsList = document.getElementById('productsList');
-        if (!productsList) return;
-        
-        const currency = this.currentBusiness?.currency || 'USD';
-        
-        if (this.products.length === 0) {
-            productsList.innerHTML = `
-                <div class="text-center" style="padding: 3rem; color: var(--text-secondary);">
-                    <h4>No products yet</h4>
-                    <p>Add your first product to get started!</p>
-                </div>
-            `;
-            return;
-        }
-
-        productsList.innerHTML = this.products.map(product => `
-            <div class="product-item" data-product-id="${product.id}">
-                <div class="product-item-header">
-                    <div>
-                        <h4>${this.app.utils.sanitizeInput(product.name)}</h4>
-                        <div class="price">${this.app.utils.formatPrice(product.price, currency)}</div>
-                    </div>
-                    <button type="button" class="delete-btn" onclick="window.kweekShopApp.dashboardManager.deleteProduct('${product.id}')">
-                        Delete
-                    </button>
-                </div>
-                <img src="${product.image_url}" alt="${this.app.utils.sanitizeInput(product.name)}" 
-                     onerror="this.src='assets/images/placeholder.jpg'">
+    const productsList = document.getElementById('productsList');
+    if (!productsList) return;
+    
+    const currency = this.currentBusiness?.currency || 'USD';
+    
+    productsList.className = `products-list ${this.currentView}-view`;
+    
+    if (this.products.length === 0) {
+        productsList.innerHTML = `
+            <div class="text-center" style="padding: 3rem; color: var(--text-secondary);">
+                <h4>No products yet</h4>
+                <p>Add your first product to get started!</p>
             </div>
-        `).join('');
+        `;
+        return;
     }
+
+    productsList.innerHTML = this.products.map(product => `
+        <div class="product-item" data-product-id="${product.id}">
+            <div class="product-item-header">
+                <div>
+                    <h4>${this.app.utils.sanitizeInput(product.name)}</h4>
+                    <div class="price">${this.app.utils.formatPrice(product.price, currency)}</div>
+                    ${product.description ? `<p class="product-description">${this.app.utils.sanitizeInput(product.description)}</p>` : ''}
+                </div>
+                <button type="button" class="delete-btn" onclick="window.kweekShopApp.dashboardManager.deleteProduct('${product.id}')">
+                    Delete
+                </button>
+            </div>
+            <img src="${product.image_url}" alt="${this.app.utils.sanitizeInput(product.name)}" 
+                 onerror="this.src='assets/images/placeholder.jpg'">
+        </div>
+    `).join('');
+}
 
     updateProductCounter() {
         const counter = document.getElementById('productCounter');
