@@ -15,7 +15,6 @@ class AuthManager {
     initializeEventListeners() {
         console.log('🔐 Setting up auth event listeners...');
         
-        // Navigation buttons - direct assignment
         const loginBtn = document.getElementById('loginBtn');
         const signupBtn = document.getElementById('signupBtn');
         const logoutBtn = document.getElementById('logoutBtn');
@@ -35,7 +34,6 @@ class AuthManager {
             console.log('✅ Logout button attached');
         }
         
-        // Landing page hero buttons
         const heroSignupBtn = document.getElementById('heroSignupBtn');
         const heroLoginBtn = document.getElementById('heroLoginBtn');
         
@@ -49,14 +47,12 @@ class AuthManager {
             console.log('✅ Hero Login button attached');
         }
         
-        // Auth form
         const authForm = document.getElementById('authForm');
         if (authForm) {
             authForm.onsubmit = (e) => this.handleAuth(e);
             console.log('✅ Auth form attached');
         }
         
-        // Auth mode switch
         const switchLink = document.getElementById('switchToSignup');
         if (switchLink) {
             switchLink.onclick = (e) => {
@@ -66,14 +62,12 @@ class AuthManager {
             console.log('✅ Switch link attached');
         }
         
-        // Modal close
         const closeBtn = document.querySelector('.close');
         if (closeBtn) {
             closeBtn.onclick = () => this.closeAuthModal();
             console.log('✅ Close button attached');
         }
         
-        // Close modal when clicking outside
         window.onclick = (e) => {
             const modal = document.getElementById('authModal');
             if (e.target === modal) {
@@ -102,7 +96,6 @@ class AuthManager {
                 this.currentUser = null;
                 this.updateUI();
                 this.app.showLandingPage();
-                this.app.showNotification('Successfully logged out.', 'success');
             }
         });
     }
@@ -201,8 +194,7 @@ class AuthManager {
                     options: {
                         data: {
                             created_at: new Date().toISOString()
-                        },
-                        redirectTo: 'http://127.0.0.1:5500'
+                        }
                     }
                 });
             }
@@ -215,14 +207,9 @@ class AuthManager {
                 this.app.showNotification('Successfully logged in!', 'success');
                 this.closeAuthModal();
             } else {
-    // Check if email confirmation is required
-    if (result.data.user && result.data.user.identities && result.data.user.identities.length === 0) {
-        this.app.showNotification('Email already exists. Please login instead.', 'error');
-    } else {
-        this.app.showNotification('Sign up successful! Please login.', 'success');
-    }
-    this.closeAuthModal();
-}
+                this.app.showNotification('Sign up Successful. Please login', 'success');
+                this.closeAuthModal();
+            }
 
         } catch (error) {
             console.error('🔐 Auth error:', error);
