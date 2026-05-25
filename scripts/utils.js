@@ -9,23 +9,12 @@ class Utils {
         try {
             console.log('🔧 Initializing Supabase...');
             
-            // YOUR SUPABASE CREDENTIALS
+            // REPLACE THIS WITH YOUR ACTUAL ANON KEY FROM SUPABASE
             const supabaseUrl = 'https://vtuovvnycivueogtjqow.supabase.co';
-            const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0dW92dm55Y2l2dWVvZ3RqcW93Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzU1MjI0MDAsImV4cCI6MjA1MTA5ODQwMH0.placeholder';
-            
-            // You need to replace the key above with your actual anon key from Supabase
-            // Go to: https://vtuovvnycivueogtjqow.supabase.co > Settings > API > anon public key
+            const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0dW92dm55Y2l2dWVvZ3RqcW93Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNzMwNTMsImV4cCI6MjA5NDg0OTA1M30.bGSyMKgr--Uv1HRHByWf3kijwVfMS5_2S8s_YbGajgU';  // ← PUT YOUR REAL KEY HERE
             
             this.supabase = supabase.createClient(supabaseUrl, supabaseKey);
             console.log('✅ Supabase connected successfully');
-            
-            // Test the connection
-            const { data, error } = await this.supabase.auth.getSession();
-            if (error) {
-                console.error('⚠️ Supabase auth error:', error);
-            } else {
-                console.log('✅ Supabase auth ready');
-            }
             
         } catch (error) {
             console.error('❌ Supabase initialization failed:', error);
@@ -33,7 +22,6 @@ class Utils {
         }
     }
 
-    // Rest of your existing methods...
     sanitizeInput(input) {
         if (typeof input !== 'string') return input;
         const div = document.createElement('div');
