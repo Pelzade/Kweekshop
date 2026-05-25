@@ -11,10 +11,21 @@ class Utils {
             
             // YOUR SUPABASE CREDENTIALS
             const supabaseUrl = 'https://vtuovvnycivueogtjqow.supabase.co';
-            const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0dW92dm55Y2l2dWVvZ3RqcW93Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNzMwNTMsImV4cCI6MjA5NDg0OTA1M30.bGSyMKgr--Uv1HRHByWf3kijwVfMS5_2S8s_YbGajgU';
+            const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0dW92dm55Y2l2dWVvZ3RqcW93Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzU1MjI0MDAsImV4cCI6MjA1MTA5ODQwMH0.placeholder';
+            
+            // You need to replace the key above with your actual anon key from Supabase
+            // Go to: https://vtuovvnycivueogtjqow.supabase.co > Settings > API > anon public key
             
             this.supabase = supabase.createClient(supabaseUrl, supabaseKey);
             console.log('✅ Supabase connected successfully');
+            
+            // Test the connection
+            const { data, error } = await this.supabase.auth.getSession();
+            if (error) {
+                console.error('⚠️ Supabase auth error:', error);
+            } else {
+                console.log('✅ Supabase auth ready');
+            }
             
         } catch (error) {
             console.error('❌ Supabase initialization failed:', error);
@@ -22,7 +33,7 @@ class Utils {
         }
     }
 
-    // Sanitize input to prevent XSS
+    // Rest of your existing methods...
     sanitizeInput(input) {
         if (typeof input !== 'string') return input;
         const div = document.createElement('div');
@@ -30,19 +41,16 @@ class Utils {
         return div.innerHTML;
     }
 
-    // Validate email format
     validateEmail(email) {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return emailRegex.test(email);
     }
 
-    // Validate phone number (basic international format)
     validatePhone(phone) {
         const phoneRegex = /^[+]?[0-9\s\-\(\)]{10,}$/;
         return phoneRegex.test(phone);
     }
 
-    // Validate file type and size (1MB max)
     validateFile(file, maxSize = 1 * 1024 * 1024) {
         const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
         
@@ -57,7 +65,6 @@ class Utils {
         return true;
     }
 
-    // Validate logo file (100KB max)
     validateLogoFile(file, maxSize = 100 * 1024) {
         const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
         
@@ -72,7 +79,6 @@ class Utils {
         return true;
     }
 
-    // Create logo preview
     createLogoPreview(file, previewElement, imageElement) {
         return new Promise((resolve) => {
             const reader = new FileReader();
@@ -85,7 +91,6 @@ class Utils {
         });
     }
 
-    // Currency options
     getCurrencyOptions() {
         return [
             { code: 'USD', symbol: '$', name: 'US Dollar' },
@@ -95,7 +100,6 @@ class Utils {
         ];
     }
 
-    // Format price with currency symbol
     formatPrice(price, currency = 'USD') {
         if (!price) return 'Price not set';
         
@@ -110,7 +114,6 @@ class Utils {
         return `${symbol}${price}`;
     }
 
-    // Generate simple shareable link with just business name
     generateShareableLink(userId, businessName = '') {
         const baseUrl = window.location.origin + window.location.pathname;
         if (businessName) {
@@ -123,14 +126,11 @@ class Utils {
         return `${baseUrl}?showcase=${userId}`;
     }
 
-    // Extract business slug
     extractBusinessSlug(showcaseParam) {
         return showcaseParam;
     }
 
-    // Show notification
     showNotification(message, type = 'info') {
-        // Remove existing notifications
         const existingNotifications = document.querySelectorAll('.notification');
         existingNotifications.forEach(notification => notification.remove());
 
@@ -138,7 +138,6 @@ class Utils {
         notification.className = `notification notification-${type}`;
         notification.textContent = message;
         
-        // Add styles
         notification.style.cssText = `
             position: fixed;
             top: 20px;
@@ -163,7 +162,6 @@ class Utils {
         
         document.body.appendChild(notification);
         
-        // Auto remove after 5 seconds
         setTimeout(() => {
             if (notification.parentNode) {
                 notification.remove();
@@ -171,14 +169,12 @@ class Utils {
         }, 5000);
     }
 
-    // Copy to clipboard
     async copyToClipboard(text) {
         try {
             await navigator.clipboard.writeText(text);
             this.showNotification('Link copied to clipboard!', 'success');
             return true;
         } catch (err) {
-            // Fallback for older browsers
             try {
                 const textArea = document.createElement('textarea');
                 textArea.value = text;
@@ -195,32 +191,5 @@ class Utils {
                 return false;
             }
         }
-    }
-
-    // Debounce function for performance
-    debounce(func, wait) {
-        let timeout;
-        return function executedFunction(...args) {
-            const later = () => {
-                clearTimeout(timeout);
-                func(...args);
-            };
-            clearTimeout(timeout);
-            timeout = setTimeout(later, wait);
-        };
-    }
-
-    // Format file size
-    formatFileSize(bytes) {
-        if (bytes === 0) return '0 Bytes';
-        const k = 1024;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-    }
-
-    // Check if user is on mobile device
-    isMobileDevice() {
-        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     }
 }
