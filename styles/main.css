@@ -1115,3 +1115,17 @@ small {
     opacity: 0.6;
     pointer-events: none;
 }
+/* Product Description Styles */
+.product-description {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-top: 0.5rem;
+    line-height: 1.5;
+}
+
+.product-card .product-description {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin: 0.75rem 0;
+    line-height: 1.5;
+}
