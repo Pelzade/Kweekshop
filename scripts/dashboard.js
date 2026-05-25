@@ -351,84 +351,87 @@ class DashboardManager {
     }
 
     async addProduct(e) {
-        e.preventDefault();
+    e.preventDefault();
+    
+    if (this.products.length >= this.maxProducts) {
+        this.app.showNotification(`Maximum ${this.maxProducts} products allowed. Please delete some products to add new ones.`, 'error');
+        return;
+    }
+
+    const productName = document.getElementById('productName')?.value;
+    const productPrice = document.getElementById('productPrice')?.value;
+    const productDescription = document.getElementById('productDescription')?.value;
+    const productImage = document.getElementById('productImage')?.files[0];
+
+    if (!productName?.trim() || !productPrice?.trim() || !productImage) {
+        this.app.showNotification('Please fill in all required fields.', 'error');
+        return;
+    }
+
+    try {
+        this.app.utils.validateFile(productImage, 1 * 1024 * 1024);
+    } catch (error) {
+        this.app.showNotification(error.message, 'error');
+        return;
+    }
+
+    const submitBtn = document.getElementById('addProductBtn');
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Adding...';
+    }
+
+    try {
+        const imageUrl = await this.uploadProductImage(productImage);
         
-        if (this.products.length >= this.maxProducts) {
-            this.app.showNotification(`Maximum ${this.maxProducts} products allowed. Please delete some products to add new ones.`, 'error');
+        const productData = {
+            user_id: this.app.authManager.currentUser.id,
+            name: this.app.utils.sanitizeInput(productName),
+            price: this.app.utils.sanitizeInput(productPrice),
+            description: productDescription ? this.app.utils.sanitizeInput(productDescription) : null,
+            image_url: imageUrl,
+            created_at: new Date().toISOString()
+        };
+
+        const { data, error } = await this.app.utils.supabase
+            .from('products')
+            .insert([productData])
+            .select();
+
+        if (error) {
+            console.error('Supabase insert error:', error);
+            this.app.showNotification('Database error: ' + error.message, 'error');
             return;
         }
 
-        const productName = document.getElementById('productName')?.value;
-        const productPrice = document.getElementById('productPrice')?.value;
-        const productImage = document.getElementById('productImage')?.files[0];
-
-        if (!productName?.trim() || !productPrice?.trim() || !productImage) {
-            this.app.showNotification('Please fill in all product fields.', 'error');
-            return;
-        }
-
-        try {
-            this.app.utils.validateFile(productImage, 1 * 1024 * 1024);
-        } catch (error) {
-            this.app.showNotification(error.message, 'error');
-            return;
-        }
-
-        const submitBtn = document.getElementById('addProductBtn');
-        if (submitBtn) {
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Adding...';
-        }
-
-        try {
-            const imageUrl = await this.uploadProductImage(productImage);
+        if (data && data.length > 0) {
+            this.products.unshift(data[0]);
+            this.renderProducts();
+            this.updateProductCounter();
+            this.applyViewStyle();
             
-            const productData = {
-                user_id: this.app.authManager.currentUser.id,
-                name: this.app.utils.sanitizeInput(productName),
-                price: this.app.utils.sanitizeInput(productPrice),
-                image_url: imageUrl,
-                created_at: new Date().toISOString()
-            };
+            // Reset form
+            const productForm = document.getElementById('productForm');
+            if (productForm) productForm.reset();
+            
+            const fileInput = document.getElementById('productImage');
+            if (fileInput) fileInput.value = '';
+            
+            this.app.showNotification('Product added successfully!', 'success');
+        } else {
+            this.app.showNotification('Failed to add product. No data returned.', 'error');
+        }
 
-            const { data, error } = await this.app.utils.supabase
-                .from('products')
-                .insert([productData])
-                .select();
-
-            if (error) {
-                console.error('Supabase insert error:', error);
-                this.app.showNotification('Database error: ' + error.message, 'error');
-                return;
-            }
-
-            if (data && data.length > 0) {
-                this.products.unshift(data[0]);
-                this.renderProducts();
-                this.updateProductCounter();
-                this.applyViewStyle(); // Re-apply view style after rendering
-                
-                const productForm = document.getElementById('productForm');
-                if (productForm) productForm.reset();
-                
-                const fileInput = document.getElementById('productImage');
-                if (fileInput) fileInput.value = '';
-                
-                this.app.showNotification('Product added successfully!', 'success');
-            } else {
-                this.app.showNotification('Failed to add product. No data returned.', 'error');
-            }
-
-        } catch (error) {
-            console.error('Error adding product:', error);
-            this.app.showNotification(error.message || 'Failed to add product. Please try again.', 'error');
-        } finally {
-            if (submitBtn) {
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Add Product';
-            }
+    } catch (error) {
+        console.error('Error adding product:', error);
+        this.app.showNotification(error.message || 'Failed to add product. Please try again.', 'error');
+    } finally {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Add Product';
         }
     }
+}
 
     async uploadProductImage(file) {
         const fileExt = file.name.split('.').pop();
